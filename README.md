@@ -1,3 +1,3 @@
 # android
-Android projects
+Android projects.
 Include projects using AWS services.
