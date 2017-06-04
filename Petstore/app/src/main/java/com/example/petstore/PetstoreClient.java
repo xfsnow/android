@@ -20,8 +20,8 @@ import java.util.*;
 import com.example.petstore.model.Pets;
 import com.example.petstore.model.Pet;
 
-
-@com.amazonaws.mobileconnectors.apigateway.annotation.Service(endpoint = "https://ds1irrct7d.execute-api.us-west-2.amazonaws.com/test")
+//TODO Change endpoint with your real URL
+@com.amazonaws.mobileconnectors.apigateway.annotation.Service(endpoint = "https://xxxxxxxxxx.execute-api.us-west-2.amazonaws.com/test")
 public interface PetstoreClient {
 
 
