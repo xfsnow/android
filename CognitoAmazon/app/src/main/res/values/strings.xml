@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">CognitoAmazon</string>
+    <string name="login_with_amazon">Login with Amazon</string>
+    <string name="login_button_content_description">"Button for authorization through Login with Amazon"</string>
+</resources>
