@@ -2,7 +2,6 @@ package org.snowpeak.cognitoamazon;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -19,18 +18,25 @@ import com.amazon.identity.auth.device.api.authorization.ProfileScope;
 import com.amazon.identity.auth.device.api.authorization.Scope;
 import com.amazon.identity.auth.device.api.authorization.User;
 import com.amazon.identity.auth.device.api.workflow.RequestContext;
-import com.amazon.identity.auth.device.authorization.api.AmazonAuthorizationManager;
+
 import com.amazon.identity.auth.device.shared.APIListener;
+import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.regions.Regions;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getName();
 
     private RequestContext requestContext;
-    private AmazonAuthorizationManager mAuthManager;
     private TextView mProfileText;
     private View mLoginButton;
     private View mLogoutButton;
-    public String accessToken;
+
+    private CognitoCachingCredentialsProvider credentialsProvider;
 
     private void fetchUserProfile() {
         User.fetch(this, new Listener<User, AuthError>() {
@@ -85,16 +91,54 @@ public class MainActivity extends AppCompatActivity {
     private void setLoggedOutState() {
         mLoginButton.setVisibility(Button.VISIBLE);
         mLogoutButton.setVisibility(Button.GONE);
-//        mIsLoggedIn = false;
-//        setLoggingInState(false);
         mProfileText.setText(getString(R.string.default_message));
+    }
+
+    private void getIdentity() {
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                String identityId = credentialsProvider.getIdentityId();
+                Log.d(TAG, "my ID is " + identityId );
+            }
+        }.start();
+    }
+
+    /**
+     * 为了把 Identity Pool ID 之类的配置值不上传到 github，做个读取 assets 文件的方法
+     * @param fileName
+     * @return
+     */
+    private String getConfig(String fileName) {
+        String res="";
+        try{
+            InputStreamReader inputReader = new InputStreamReader( getResources().getAssets().open(fileName) );
+            BufferedReader bufReader = new BufferedReader(inputReader);
+            String line="";
+            String Result="";
+            while((line = bufReader.readLine()) != null)
+                Result += line;
+            return Result;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return res;
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        String fileName = "identity_pool_id.txt"; //文件名字
+        String identity_pool_id = getConfig(fileName);
         super.onCreate(savedInstanceState);
-        requestContext = RequestContext.create(this);
+        credentialsProvider = new CognitoCachingCredentialsProvider(
+                getApplicationContext(), // Context
+                identity_pool_id, // Identity Pool ID
+                Regions.US_WEST_2 // Region
+        );
+        getIdentity();
 
+        requestContext = RequestContext.create(this);
         requestContext.registerListener(new AuthorizeListener() {
 
             /* Authorization was completed successfully. */
@@ -175,6 +219,18 @@ public class MainActivity extends AppCompatActivity {
         requestContext.onResume();
     }
 
+    private class TokenListener implements APIListener {
+
+        /* getToken completed successfully. */
+        @Override
+        public void onSuccess(Bundle response) {
+        }
+        /* There was an error during the attempt to get the token. */
+        @Override
+        public void onError(AuthError ae) {
+        }
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -183,8 +239,13 @@ public class MainActivity extends AppCompatActivity {
         AuthorizationManager.getToken(this, scopes, new Listener<AuthorizeResult, AuthError>() {
             @Override
             public void onSuccess(AuthorizeResult result) {
-                if (result.getAccessToken() != null) {
+                String token = result.getAccessToken();
+                if (null != token) {
                     /* The user is signed in */
+                    Map<String, String> logins = new HashMap<String, String>();
+                    logins.put("www.amazon.com", token);
+                    credentialsProvider.setLogins(logins);
+                    getIdentity();
                     fetchUserProfile();
                 } else {
                     /* The user is not signed in */

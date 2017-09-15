@@ -54,3 +54,4 @@ freeline.py
 freeline/
 freeline_project_description.json
 /CognitoAmazon/app/src/main/assets/api_key.txt
+/CognitoAmazon/app/src/main/assets/identity_pool_id.txt
