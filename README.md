@@ -5,7 +5,7 @@ Include projects using AWS services.
 
 ## Table of projects
 
-1. CognitoAmazon
+### CognitoAmazon
    A sample to show how to Login with Amazon with Cognito Federated Identities.
-2. Petstore
+### Petstore
    A sample project using Android SDK for AWS API Gateway.
