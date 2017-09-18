@@ -8,8 +8,10 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginLeft="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_centerInParent="true">
+        android:layout_marginTop="88dp"
+        android:id="@+id/linearLayout"
+        android:layout_below="@+id/logout"
+        android:layout_centerHorizontal="true">
         <ProgressBar
             android:id="@+id/log_in_progress"
             android:layout_width="wrap_content"
@@ -22,8 +24,8 @@
             android:layout_height="wrap_content"
             android:text="@string/default_message"
             android:textSize="15sp"
-            android:gravity="center"
-            android:layout_gravity="center"/>
+            android:gravity="top"
+            android:layout_gravity="top"/>
     </LinearLayout>
 <ImageButton android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -47,5 +49,17 @@
         android:clickable="true"
         android:textColor="@color/logout_text_color_state"
         android:paddingBottom="10dp"/>
+
+    <TextView
+        android:id="@+id/iam_info"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/linearLayout"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center"
+        android:layout_marginTop="32dp"
+        android:gravity="center"
+        android:text="@string/default_iam"
+        android:textSize="15sp" />
 
 </RelativeLayout>

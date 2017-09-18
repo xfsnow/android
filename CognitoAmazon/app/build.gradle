@@ -47,6 +47,7 @@ dependencies {
     compile 'com.amazonaws:aws-android-sdk-core:2.4.+'
     compile 'com.amazonaws:aws-android-sdk-cognito:2.4.+'
     compile 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.4.+'
+    compile 'com.amazonaws:aws-android-sdk-s3:2.4.+'
     testCompile 'junit:junit:4.12'
     compile files('libs/login-with-amazon-sdk.jar')
 }

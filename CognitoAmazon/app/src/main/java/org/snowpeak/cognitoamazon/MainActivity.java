@@ -19,28 +19,31 @@ import com.amazon.identity.auth.device.api.authorization.Scope;
 import com.amazon.identity.auth.device.api.authorization.User;
 import com.amazon.identity.auth.device.api.workflow.RequestContext;
 
-import com.amazon.identity.auth.device.shared.APIListener;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.Bucket;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = MainActivity.class.getName();
+    private static final String TAG = "CognitoAmazon";
 
     private RequestContext requestContext;
     private TextView mProfileText;
+    private TextView mIamText;
     private View mLoginButton;
     private View mLogoutButton;
-
+    private String identityPoolId;
     private CognitoCachingCredentialsProvider credentialsProvider;
 
     private void fetchUserProfile() {
         User.fetch(this, new Listener<User, AuthError>() {
-
             /* fetch completed successfully. */
             @Override
             public void onSuccess(User user) {
@@ -52,29 +55,23 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateProfileData(name, email, account, zipcode);
-
+                        StringBuilder profileBuilder = new StringBuilder();
+                        profileBuilder.append(String.format("Welcome, %s!\n", name));
+                        //        profileBuilder.append(String.format("Your email is %s\n", email));
+                        //        profileBuilder.append(String.format("Your zipCode is %s\n", zipCode));
+                        final String profile = profileBuilder.toString();
+                        mProfileText.setText(profile);
+                        Log.d(TAG, "Profile Response: " + profile);
+                        setLoggedInState();
                     }
                 });
             }
-
             /* There was an error during the attempt to get the profile. */
             @Override
             public void onError(AuthError ae) {
-     /* Retry or inform the user of the error */
+             /* Retry or inform the user of the error */
             }
         });
-    }
-
-    private void updateProfileData(String name, String email, String account, String zipCode) {
-        StringBuilder profileBuilder = new StringBuilder();
-        profileBuilder.append(String.format("Welcome, %s!\n", name));
-//        profileBuilder.append(String.format("Your email is %s\n", email));
-//        profileBuilder.append(String.format("Your zipCode is %s\n", zipCode));
-        final String profile = profileBuilder.toString();
-        mProfileText.setText(profile);
-        Log.d(TAG, "Profile Response: " + profile);
-        setLoggedInState();
     }
 
     /**
@@ -92,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
         mLoginButton.setVisibility(Button.VISIBLE);
         mLogoutButton.setVisibility(Button.GONE);
         mProfileText.setText(getString(R.string.default_message));
+        mIamText.setText(getString(R.string.default_iam));
     }
 
     private void getIdentity() {
@@ -100,7 +98,28 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 super.run();
                 String identityId = credentialsProvider.getIdentityId();
-                Log.d(TAG, "my ID is " + identityId );
+                Log.d(TAG, "my ID is " + identityId);
+                // 用 S3 演示授权用户可操作读取桶列表。
+                AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
+                try {
+                    List<Bucket> bucketList = s3.listBuckets();
+                    final StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
+                    for (Bucket bucket: bucketList) {
+                        bucketNameList.append(bucket.getName()).append("\n");
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                           Log.d(TAG, "s3 bucket" );
+                           mIamText.setText(bucketNameList);
+                        }
+                    });
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    Log.d(TAG, "This is OK as not authenticated to list S3 bucket." );
+                }
             }
         }.start();
     }
@@ -129,11 +148,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         String fileName = "identity_pool_id.txt"; //文件名字
-        String identity_pool_id = getConfig(fileName);
+        identityPoolId = getConfig(fileName);
         super.onCreate(savedInstanceState);
         credentialsProvider = new CognitoCachingCredentialsProvider(
                 getApplicationContext(), // Context
-                identity_pool_id, // Identity Pool ID
+                identityPoolId, // Identity Pool ID
                 Regions.US_WEST_2 // Region
         );
         getIdentity();
@@ -185,6 +204,8 @@ public class MainActivity extends AppCompatActivity {
         });
         // 显示用户信息的文本块，未登录时显示提示语
         mProfileText = (TextView) findViewById(R.id.profile_info);
+        // 显示用户使用 AWS 的信息，用来演示授权前后的行为
+        mIamText = (TextView) findViewById(R.id.iam_info);
 
         // 退出按钮，及注册点击事件
         mLogoutButton = (Button) findViewById(R.id.logout);
@@ -192,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
+                // 退出 Amazon 登录
                 AuthorizationManager.signOut(getApplicationContext(), new Listener<Void, AuthError>() {
                     @Override
                     public void onSuccess(Void response) {
@@ -208,6 +230,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(TAG, "Error clearing authorization state.", authError);
                     }
                 });
+                // 退出 AWS Cognito 的登录
+                credentialsProvider.clearCredentials();
             }
         });
     }
@@ -217,18 +241,6 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         // 如果 Android　应用的生命周期管理把这个活动关闭了，在 onResume() 方法里把 requestContext 恢复起来。
         requestContext.onResume();
-    }
-
-    private class TokenListener implements APIListener {
-
-        /* getToken completed successfully. */
-        @Override
-        public void onSuccess(Bundle response) {
-        }
-        /* There was an error during the attempt to get the token. */
-        @Override
-        public void onError(AuthError ae) {
-        }
     }
 
     @Override
