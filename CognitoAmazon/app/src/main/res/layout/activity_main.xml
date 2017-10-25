@@ -27,13 +27,13 @@
             android:gravity="top"
             android:layout_gravity="top"/>
     </LinearLayout>
-<ImageButton android:layout_width="wrap_content"
+    <ImageButton android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="10dp"
         android:id="@+id/login_with_amazon"
-        android:src="@color/login_button_image_state"
+        android:src="@drawable/login_button_image_state"
         android:background="@android:color/transparent"
         android:padding="0dp"
         android:contentDescription="@string/login_button_content_description"/>
