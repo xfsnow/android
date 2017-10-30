@@ -49,16 +49,17 @@ public class MainActivity extends AppCompatActivity {
             public void onSuccess(User user) {
                 final String name = user.getUserName();
                 final String email = user.getUserEmail();
-                final String account = user.getUserId();
-                final String zipcode = user.getUserPostalCode();
+                final String accountId = user.getUserId();
+                final String zipCode = user.getUserPostalCode();
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         StringBuilder profileBuilder = new StringBuilder();
                         profileBuilder.append(String.format("Welcome, %s!\n", name));
-                        //        profileBuilder.append(String.format("Your email is %s\n", email));
-                        //        profileBuilder.append(String.format("Your zipCode is %s\n", zipCode));
+                        profileBuilder.append(String.format("Your Account Id is %s\n", accountId));
+                        profileBuilder.append(String.format("Your email is %s\n", email));
+                        profileBuilder.append(String.format("Your zipCode is %s\n", zipCode));
                         final String profile = profileBuilder.toString();
                         mProfileText.setText(profile);
                         Log.d(TAG, "Profile Response: " + profile);
