@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+
+    <ImageButton android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10dp"
+        android:id="@+id/login_with_amazon"
+        android:src="@drawable/login_button_image_state"
+        android:background="@android:color/transparent"
+        android:padding="0dp"
+        android:contentDescription="@string/login_button_content_description"/>
+    <Button android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:id="@+id/logout"
+        android:text="@string/logout"
+        android:visibility="gone"
+        android:clickable="true"
+        android:textColor="@color/logout_text_color_state"
+        android:paddingBottom="10dp"/>
+</RelativeLayout>
