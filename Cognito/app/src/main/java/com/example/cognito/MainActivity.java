@@ -18,6 +18,13 @@ import com.amazon.identity.auth.device.api.authorization.ProfileScope;
 import com.amazon.identity.auth.device.api.authorization.Scope;
 import com.amazon.identity.auth.device.api.authorization.User;
 import com.amazon.identity.auth.device.api.workflow.RequestContext;
+import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.Bucket;
+
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -25,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private RequestContext requestContext;
     private View mLoginButton;
     private View mLogoutButton;
+    private String identityPoolId;
+    private CognitoCachingCredentialsProvider credentialsProvider;
 
     private void fetchUserProfile() {
         User.fetch(this, new Listener<User, AuthError>() {
@@ -58,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
     /**
      * Sets the state of the application to reflect that the user is currently authorized.
      */
@@ -76,10 +86,53 @@ public class MainActivity extends AppCompatActivity {
 //        mIamText.setText(getString(R.string.default_iam));
     }
 
+    private void getIdentity() {
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                String id = null;
+                try {
+//                    id = credentialsProvider.getIdentityId();
+                    AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
+                    s3.setEndpoint("s3.cn-north-1.amazonaws.com.cn");
+                    List<Bucket> bucketList = s3.listBuckets();
+                    final StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
+                    for (Bucket bucket: bucketList) {
+                        bucketNameList.append(bucket.getName()).append("\n");
+                    }
+                    Log.d(TAG, "s3 bucket" +bucketNameList );
+//                        runOnUiThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                Log.d(TAG, "s3 bucket" +bucketNameList );
+////                                mIamText.setText(bucketNameList);
+//                            }
+//                        });
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    Log.d(TAG, "This is OK as not authenticated to list S3 bucket." );
+                }
+//                Log.d(TAG, "getIdentity: "+id);
+            }
+        }.start();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        identityPoolId = "cn-north-1:8f785708-1bea-411b-9c34-9ad82dcf8630";
+        // 初始化 Amazon Cognito 凭证提供程序
+        credentialsProvider = new CognitoCachingCredentialsProvider(
+                getApplicationContext(),
+                identityPoolId, // 身份池 ID
+                Regions.CN_NORTH_1 // 区域
+        );
+
+        getIdentity();
 
         requestContext = RequestContext.create(this);
         requestContext.registerListener(new AuthorizeListener() {

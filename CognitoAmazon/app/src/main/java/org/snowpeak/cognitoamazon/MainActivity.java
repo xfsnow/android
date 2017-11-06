@@ -248,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         Scope[] scopes = {ProfileScope.profile(), ProfileScope.postalCode()};
-        // 活动开始时调 getToken 检查是否已经登录状态，是登录的直接显示用户信息
+//         活动开始时调 getToken 检查是否已经登录状态，是登录的直接显示用户信息
         AuthorizationManager.getToken(this, scopes, new Listener<AuthorizeResult, AuthError>() {
             @Override
             public void onSuccess(AuthorizeResult result) {
