@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.amazon.identity.auth.device.AuthError;
@@ -19,21 +20,27 @@ import com.amazon.identity.auth.device.api.authorization.Scope;
 import com.amazon.identity.auth.device.api.authorization.User;
 import com.amazon.identity.auth.device.api.workflow.RequestContext;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.Bucket;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "CognitoLwA";
-    private RequestContext requestContext;
-    private View mLoginButton;
-    private View mLogoutButton;
+    private static final Regions MY_REGION = Regions.CN_NORTH_1;
     private String identityPoolId;
     private CognitoCachingCredentialsProvider credentialsProvider;
+
+    private RequestContext requestContext;
+    private TextView mIamText;
+    private View mLoginButton;
+    private View mLogoutButton;
 
     private void fetchUserProfile() {
         User.fetch(this, new Listener<User, AuthError>() {
@@ -91,31 +98,51 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 super.run();
-                String id = null;
                 try {
-//                    id = credentialsProvider.getIdentityId();
+                    // 先只获取身份ID ，验证 Cognito 已正常启用。
+                    String identityId = credentialsProvider.getIdentityId();
+                    Log.d(TAG, "my ID is " + identityId);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+    }
+
+    private void getAuth(String token) {
+        /* 用户已登录，联合登录Cognito*/
+        Map<String, String> logins = new HashMap<String, String>();
+        logins.put("www.amazon.com", token);
+        credentialsProvider.setLogins(logins);
+        new Thread(){
+            @Override
+            public void run() {
+                super.run();
+                try {
+                    String identityId = credentialsProvider.getIdentityId();
+                    Log.d(TAG, "my ID is " + identityId);
                     AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
-                    s3.setEndpoint("s3.cn-north-1.amazonaws.com.cn");
+                    s3.setRegion(Region.getRegion(MY_REGION));
                     List<Bucket> bucketList = s3.listBuckets();
                     final StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
                     for (Bucket bucket: bucketList) {
                         bucketNameList.append(bucket.getName()).append("\n");
                     }
                     Log.d(TAG, "s3 bucket" +bucketNameList );
-//                        runOnUiThread(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                Log.d(TAG, "s3 bucket" +bucketNameList );
-////                                mIamText.setText(bucketNameList);
-//                            }
-//                        });
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this, bucketNameList, Toast.LENGTH_LONG).show();
+                            }
+                        });
                 }
                 catch (Exception e)
                 {
                     e.printStackTrace();
                     Log.d(TAG, "This is OK as not authenticated to list S3 bucket." );
                 }
-//                Log.d(TAG, "getIdentity: "+id);
             }
         }.start();
     }
@@ -129,11 +156,10 @@ public class MainActivity extends AppCompatActivity {
         credentialsProvider = new CognitoCachingCredentialsProvider(
                 getApplicationContext(),
                 identityPoolId, // 身份池 ID
-                Regions.CN_NORTH_1 // 区域
+                MY_REGION // 区域
         );
-
+        Log.d(TAG, "onCreate: ");
         getIdentity();
-
         requestContext = RequestContext.create(this);
         requestContext.registerListener(new AuthorizeListener() {
 
@@ -141,6 +167,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(AuthorizeResult result) {
         /* Your app is now authorized for the requested scopes */
+                String token = result.getAccessToken();
+                if (null != token) {
+                    /* 用户已登录，联合登录Cognito*/
+                    getAuth(token);
+                    fetchUserProfile();
+                } else {
+                    /* The user is not signed in */
+                }
                 fetchUserProfile();
             }
 
@@ -214,6 +248,8 @@ public class MainActivity extends AppCompatActivity {
             public void onSuccess(AuthorizeResult result) {
                 String token = result.getAccessToken();
                 if (null != token) {
+                    Log.d(TAG, "onSuccess: ");
+                    getAuth(token);
                     fetchUserProfile();
                 } else {
                     /* The user is not signed in */
