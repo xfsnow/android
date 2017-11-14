@@ -98,60 +98,50 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 super.run();
+                // 先只获取身份ID ，验证 Cognito 已正常启用。
+                String identityId = credentialsProvider.getIdentityId();
+                Log.d(TAG, "my ID is " + identityId);
                 try {
-                    // 先只获取身份ID ，验证 Cognito 已正常启用。
-                    String identityId = credentialsProvider.getIdentityId();
-                    Log.d(TAG, "my ID is " + identityId);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
+                    AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
+                    s3.setRegion(Region.getRegion(MY_REGION));
+                    List<Bucket> bucketList = s3.listBuckets();
+                    final StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
+                    for (Bucket bucket : bucketList) {
+                        bucketNameList.append(bucket.getName()).append("\n");
+                    }
+                    Log.d(TAG, "s3 bucket" + bucketNameList);
+                    runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                          Toast.makeText(MainActivity.this, bucketNameList, Toast.LENGTH_LONG).show();
+                       }
+                     });
+                   }
+                   catch (Exception e) {
+                       e.printStackTrace();
+                       runOnUiThread(new Runnable() {
+                           @Override
+                           public void run() {
+                            Toast.makeText(MainActivity.this, "This is OK as not authenticated to list S3 bucket.", Toast.LENGTH_LONG).show();
+                           }
+                       });
                 }
             }
         }.start();
     }
 
-    private void getAuth(String token) {
+    private void setCognitoLogin(String token) {
         /* 用户已登录，联合登录Cognito*/
         Map<String, String> logins = new HashMap<String, String>();
         logins.put("www.amazon.com", token);
         credentialsProvider.setLogins(logins);
-        new Thread(){
-            @Override
-            public void run() {
-                super.run();
-                try {
-                    String identityId = credentialsProvider.getIdentityId();
-                    Log.d(TAG, "my ID is " + identityId);
-                    AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
-                    s3.setRegion(Region.getRegion(MY_REGION));
-                    List<Bucket> bucketList = s3.listBuckets();
-                    final StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
-                    for (Bucket bucket: bucketList) {
-                        bucketNameList.append(bucket.getName()).append("\n");
-                    }
-                    Log.d(TAG, "s3 bucket" +bucketNameList );
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, bucketNameList, Toast.LENGTH_LONG).show();
-                            }
-                        });
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                    Log.d(TAG, "This is OK as not authenticated to list S3 bucket." );
-                }
-            }
-        }.start();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        identityPoolId = "cn-north-1:8f785708-1bea-411b-9c34-9ad82dcf8630";
+        identityPoolId = ""; // 这里补充具体的身份池 ID
         // 初始化 Amazon Cognito 凭证提供程序
         credentialsProvider = new CognitoCachingCredentialsProvider(
                 getApplicationContext(),
@@ -159,7 +149,6 @@ public class MainActivity extends AppCompatActivity {
                 MY_REGION // 区域
         );
         Log.d(TAG, "onCreate: ");
-        getIdentity();
         requestContext = RequestContext.create(this);
         requestContext.registerListener(new AuthorizeListener() {
 
@@ -170,8 +159,9 @@ public class MainActivity extends AppCompatActivity {
                 String token = result.getAccessToken();
                 if (null != token) {
                     /* 用户已登录，联合登录Cognito*/
-                    getAuth(token);
+                    setCognitoLogin(token);
                     fetchUserProfile();
+                    getIdentity();
                 } else {
                     /* The user is not signed in */
                 }
@@ -189,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCancel(AuthCancellation cancellation) {
         /* Reset the UI to a ready-to-login state */
+
             }
         });
 
@@ -228,6 +219,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(TAG, "Error clearing authorization state.", authError);
                     }
                 });
+                // 退出 AWS Cognito 的登录
+                credentialsProvider.clearCredentials();
             }
         });
     }
@@ -241,6 +234,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart(){
         super.onStart();
+        getIdentity();
         Scope[] scopes = { ProfileScope.profile(), ProfileScope.postalCode() };
         AuthorizationManager.getToken(this, scopes, new Listener<AuthorizeResult, AuthError>() {
 
@@ -249,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
                 String token = result.getAccessToken();
                 if (null != token) {
                     Log.d(TAG, "onSuccess: ");
-                    getAuth(token);
+                    setCognitoLogin(token);
                     fetchUserProfile();
                 } else {
                     /* The user is not signed in */
