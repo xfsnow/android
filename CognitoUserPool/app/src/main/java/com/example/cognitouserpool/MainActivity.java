@@ -8,6 +8,7 @@ import android.util.Log;
 import android.widget.TextView;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
@@ -29,6 +30,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cognitoidentityprovider.model.InvalidParameterException;
 import com.amazonaws.services.cognitoidentityprovider.model.InvalidPasswordException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -40,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     private String userId = "Test";
     private String password = "Password@123";
 //    private String password = "Password@12";
+
+    private CognitoCachingCredentialsProvider credentialsProvider;
 
     /**
      * 注册用户
@@ -97,6 +101,11 @@ public class MainActivity extends AppCompatActivity {
             String idToken = userSession.getIdToken().getJWTToken();
 
             Log.d(TAG, "onSuccess: "+userSession + "\naccessToken="+accessToken+",\n idToken="+idToken);
+            // TODO 怎么从 AWSConfiguration 中读出具体配置项的值？不用读出具体配置项的值，有另一个构造方法，直接用 awsConfiguration 作传入参数
+            Map<String, String> logins = new HashMap<String, String>();
+//            logins.put(cognito-idp.<region>.amazonaws.com/<YOUR_USER_POOL_ID>, session.getIdToken().getJWTToken());
+            logins.put("cognito-idp.us-west-2.amazonaws.com/us-west-2_sT7dO0BSj", idToken);
+            credentialsProvider.setLogins(logins);
         }
 
         @Override
@@ -181,7 +190,13 @@ public class MainActivity extends AppCompatActivity {
         Context context = getApplicationContext();
         // 把配置存在配置文件里 /src/main/res/raw/awsconfiguration.json。可以方便地在 github 排除掉，保证安全。
         AWSConfiguration awsConfiguration = new AWSConfiguration(context);
+
         CognitoUserPool userPool = new CognitoUserPool(context, awsConfiguration);
+        // TODO 怎么从 AWSConfiguration 中读出具体配置项的值？不用读出具体配置项的值，有另一个构造方法，直接用 awsConfiguration 作传入参数
+        credentialsProvider = new CognitoCachingCredentialsProvider(
+                context, // Context
+                awsConfiguration
+        );
 
         // 为应用程序注册用户
         // Create a CognitoUserAttributes object and add user attributes

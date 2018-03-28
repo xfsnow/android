@@ -56,3 +56,5 @@ freeline_project_description.json
 /CognitoAmazon/app/src/main/assets/api_key.txt
 /CognitoAmazon/app/src/main/assets/identity_pool_id.txt
 /Cognito/app/src/main/assets/api_key.txt
+/CognitoDeveloper/.idea
+/CognitoDeveloper/.gradle

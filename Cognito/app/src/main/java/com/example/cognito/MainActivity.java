@@ -19,6 +19,8 @@ import com.amazon.identity.auth.device.api.authorization.ProfileScope;
 import com.amazon.identity.auth.device.api.authorization.Scope;
 import com.amazon.identity.auth.device.api.authorization.User;
 import com.amazon.identity.auth.device.api.workflow.RequestContext;
+import com.amazonaws.auth.AWSIdentityProvider;
+import com.amazonaws.auth.AWSSessionCredentials;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
@@ -100,6 +102,10 @@ public class MainActivity extends AppCompatActivity {
                 super.run();
                 // 先只获取身份ID ，验证 Cognito 已正常启用。
                 String identityId = credentialsProvider.getIdentityId();
+                AWSSessionCredentials cred = credentialsProvider.getCredentials();
+                Log.d(TAG, "AWSSessionCredentials: "+cred);
+                AWSIdentityProvider provider = credentialsProvider.getIdentityProvider();
+                Log.d(TAG, "provider: "+provider);
                 Log.d(TAG, "my ID is " + identityId);
                 try {
                     AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
@@ -141,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        identityPoolId = ""; // 这里补充具体的身份池 ID
+        identityPoolId = "cn-north-1:8f785708-1bea-411b-9c34-9ad82dcf8630"; // 这里补充具体的身份池 ID
         // 初始化 Amazon Cognito 凭证提供程序
         credentialsProvider = new CognitoCachingCredentialsProvider(
                 getApplicationContext(),

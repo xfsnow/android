@@ -14,13 +14,13 @@ import com.example.cognitodeveloper.model.AuthenticationResponseModel;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = "cognitodeveloper_Main";
-    private static final String IDENTITY_POOL_ID = "";
+    private static final String IDENTITY_POOL_ID = "us-west-2:6383cf10-d3d7-4ae4-992d-24fb43fc3e4e";
     private static final Regions REGION = Regions.US_WEST_2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-//        java.util.logging.Logger.getLogger("com.amazonaws").setLevel(java.util.logging.Level.FINEST);
-//        java.util.logging.Logger.getLogger("org.apache.http").setLevel(java.util.logging.Level.FINEST);
+        java.util.logging.Logger.getLogger("com.amazonaws").setLevel(java.util.logging.Level.FINEST);
+        java.util.logging.Logger.getLogger("org.apache.http").setLevel(java.util.logging.Level.FINEST);
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -40,18 +40,13 @@ public class MainActivity extends AppCompatActivity {
         final AuthenticationRequestModel authRequest = new AuthenticationRequestModel();
         authRequest.setUserName("Dhruv");
         authRequest.setPasswordHash("8743b52063cd84097a65d1633f5c74f5");
-        authRequest.setUserName("Test");
-        authRequest.setPasswordHash("b52063cd84097a65d1633f5c74f58743");
-//        AuthenticationResponseModel authResponse = client.loginPost(authRequest );
-//        Log.d(TAG, "authResponse: "+authResponse.getUserId()+" "+authResponse.getOpenIdToken());
-//        String id = authResponse.getOpenIdToken();
-//        Pets pets = client.petsGet("dog", "1");
-        // 列表中的每个项目可以用 get() 方法获取
-//        PetsItem item = pets.get(0);
+//        authRequest.setUserName("Test");
+//        authRequest.setPasswordHash("b52063cd84097a65d1633f5c74f58743");
         new Thread(){
             @Override
             public void run() {
                 super.run();
+                Log.d(TAG, "run");
                 AuthenticationResponseModel authResponse = client.loginPost(authRequest);
                 Log.d(TAG, "authResponse: "+authResponse.getUserId()+" "+authResponse.getIdentityId()+" "+authResponse.getOpenIdToken());
             }

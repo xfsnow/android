@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 26
     defaultConfig {
-        applicationId "com.example.cognitodeveloper"
+        applicationId "com.example.cognitodev"
         minSdkVersion 23
         targetSdkVersion 26
         versionCode 1
@@ -27,7 +27,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compile 'com.amazonaws:aws-android-sdk-core:2.6.+'
     compile "com.amazonaws:aws-android-sdk-apigateway-core:2.6+"
-//    compile 'com.amazonaws:aws-android-sdk-cognito:2.4.+'
     compile 'com.amazonaws:aws-android-sdk-cognito:2.6.+'
     compile 'com.amazonaws:aws-android-sdk-cognitoauth:2.6.+@aar'
     compile "com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.6.+"

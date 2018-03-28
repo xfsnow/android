@@ -245,10 +245,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    /**
+     * 在 onStart 事件统一调用 Cognito 授权AWS。因为Amazon已登录的 App 启动时在 onStart 时调用Cognito 授权；Amazon 未登录的，跳去登录再回来，还是 onStart 事件调用Cognito 授权。
+     */
     protected void onStart() {
         super.onStart();
         Scope[] scopes = {ProfileScope.profile(), ProfileScope.postalCode()};
         // 活动开始时调 getToken 检查是否已经登录状态，是登录的直接显示用户信息
+
         AuthorizationManager.getToken(this, scopes, new Listener<AuthorizeResult, AuthError>() {
             @Override
             public void onSuccess(AuthorizeResult result) {
