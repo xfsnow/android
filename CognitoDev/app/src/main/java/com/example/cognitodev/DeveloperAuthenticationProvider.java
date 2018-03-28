@@ -12,25 +12,30 @@ import com.example.cognitodev.model.AuthenticationRequestModel;
 import com.example.cognitodev.model.AuthenticationResponseModel;
 
 /**
- * Created by xuef on 2018-3-28.
+ * 开发人员验证提供商
  */
 public class DeveloperAuthenticationProvider extends AWSAbstractCognitoDeveloperIdentityProvider {
+
     public static final String TAG = "cogdev_DevAuthProvider";
     
     private static final String developerProvider = "login.company.developer";
 
-    private Context context;
+    private CognitoauthClient apiClient;
+    private String username;
+    private String password;
 
-    public DeveloperAuthenticationProvider(String accountId, String identityPoolId, Context context, Regions region) {
+    public DeveloperAuthenticationProvider(String accountId, String identityPoolId, Context context, Regions region, String username, String password) {
         super(accountId, identityPoolId, region);
-        this.context = context;
-
+        // 把调用 API Gateway 相关的对象初始化出来
+        AWSCredentialsProvider apiCredentialsProvider = new CognitoCachingCredentialsProvider(context, identityPoolId, region);
+        ApiClientFactory factory = new ApiClientFactory().credentialsProvider(apiCredentialsProvider);
+        this.apiClient = factory.build(CognitoauthClient.class);
+        this.username = username;
+        this.password = password;
     }
-
 
     // Return the developer provider name which you choose while setting up the
     // identity pool in the &COG; Console
-
     @Override
     public String getProviderName() {
         return developerProvider;
@@ -49,14 +54,10 @@ public class DeveloperAuthenticationProvider extends AWSAbstractCognitoDeveloper
 
         // Call the update method with updated identityId and token to make sure
         // these are ready to be used from Credentials Provider.
-        AWSCredentialsProvider apiCredentialsProvider = new CognitoCachingCredentialsProvider(context, MainActivity.COGNITO_POOL_ID, MainActivity.REGION);
-        // 使用 ApiClientFactory 工厂方法来生成SDK 的客户端实例。
-        ApiClientFactory factory = new ApiClientFactory().credentialsProvider(apiCredentialsProvider);
-        CognitoauthClient client = factory.build(CognitoauthClient.class);
         AuthenticationRequestModel authRequest = new AuthenticationRequestModel();
-        authRequest.setUserName("Dhruv");
-        authRequest.setPasswordHash("8743b52063cd84097a65d1633f5c74f5");
-        AuthenticationResponseModel authResponse = client.loginPost(authRequest);
+        authRequest.setUserName(username);
+        authRequest.setPasswordHash(password);
+        AuthenticationResponseModel authResponse = apiClient.loginPost(authRequest);
         Log.d(TAG, "refresh: " + authResponse.getUserId() + " " + authResponse.getIdentityId() + " " + authResponse.getOpenIdToken());
         identityId = authResponse.getIdentityId();
         String token = authResponse.getOpenIdToken();
@@ -79,15 +80,10 @@ public class DeveloperAuthenticationProvider extends AWSAbstractCognitoDeveloper
 //        } else {
 //            return identityId;
 //        }
-
-        AWSCredentialsProvider apiCredentialsProvider = new CognitoCachingCredentialsProvider(context, MainActivity.COGNITO_POOL_ID, MainActivity.REGION);
-        // 使用 ApiClientFactory 工厂方法来生成SDK 的客户端实例。
-        ApiClientFactory factory = new ApiClientFactory().credentialsProvider(apiCredentialsProvider);
-        CognitoauthClient client = factory.build(CognitoauthClient.class);
         AuthenticationRequestModel authRequest = new AuthenticationRequestModel();
-        authRequest.setUserName("Dhruv");
-        authRequest.setPasswordHash("8743b52063cd84097a65d1633f5c74f5");
-        AuthenticationResponseModel authResponse = client.loginPost(authRequest);
+        authRequest.setUserName(username);
+        authRequest.setPasswordHash(password);
+        AuthenticationResponseModel authResponse = apiClient.loginPost(authRequest);
         Log.d(TAG, "getIdentityId: " + authResponse.getUserId() + " " + authResponse.getIdentityId() + " " + authResponse.getOpenIdToken());
         identityId = authResponse.getIdentityId();
         return identityId;
