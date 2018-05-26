@@ -3,8 +3,8 @@ package com.aws.cognitowx.wxapi;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
+import com.aws.cognitowx.MainActivity;
 import com.tencent.mm.opensdk.modelbase.BaseReq;
 import com.tencent.mm.opensdk.modelbase.BaseResp;
 import com.tencent.mm.opensdk.modelmsg.SendAuth;
@@ -44,6 +44,8 @@ public class WXEntryActivity extends Activity implements IWXAPIEventHandler{
                 //用户同意
                 code = newResp.code;
                 hint = "allow, code=" + code;
+                MainActivity.WX_CODE = code;
+                finish();
                 break;
             case BaseResp.ErrCode.ERR_AUTH_DENIED:
                 //用户拒绝
@@ -55,6 +57,7 @@ public class WXEntryActivity extends Activity implements IWXAPIEventHandler{
                 break;
             default:
         }
-       Toast.makeText(this, hint, Toast.LENGTH_LONG).show();
+//       Toast.makeText(this, hint, Toast.LENGTH_LONG).show();
+        Log.d(TAG, "onResp: "+hint);
     }
 }
