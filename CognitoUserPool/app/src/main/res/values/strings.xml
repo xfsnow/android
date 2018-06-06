@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">CognitoUserPool</string>
+    <string name="title">Cognito Users Pool Demo</string>
+</resources>

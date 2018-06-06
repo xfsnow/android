@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Cognito Developer Authentication</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="reset">Reset</string>
+</resources>
