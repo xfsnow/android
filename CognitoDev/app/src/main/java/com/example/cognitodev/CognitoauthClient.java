@@ -21,7 +21,7 @@ import com.example.cognitodev.model.AuthenticationResponseModel;
 import com.example.cognitodev.model.AuthenticationRequestModel;
 
 // Change this endpoint URL to your own URL.
-@com.amazonaws.mobileconnectors.apigateway.annotation.Service(endpoint = "https://.execute-api.us-west-2.amazonaws.com/test")
+@com.amazonaws.mobileconnectors.apigateway.annotation.Service(endpoint = "https://hkpsdljkid.execute-api.us-west-2.amazonaws.com/test")
 public interface CognitoauthClient {
 
 

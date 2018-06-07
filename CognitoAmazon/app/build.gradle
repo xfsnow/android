@@ -16,7 +16,7 @@ android {
         }
     }
     compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    buildToolsVersion '27.0.3'
     defaultConfig {
         applicationId "org.snowpeak.cognitoamazon"
         minSdkVersion 23
@@ -38,16 +38,16 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:26.+'
-    compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'com.amazonaws:aws-android-sdk-core:2.6.12'
-    compile 'com.amazonaws:aws-android-sdk-cognito:2.6.12'
-    compile 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.6.12'
-    compile 'com.amazonaws:aws-android-sdk-s3:2.6.12'
-    testCompile 'junit:junit:4.12'
-    compile files('libs/login-with-amazon-sdk.jar')
+    implementation 'com.android.support:appcompat-v7:26.+'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    implementation 'com.amazonaws:aws-android-sdk-core:2.6.12'
+    implementation 'com.amazonaws:aws-android-sdk-cognito:2.6.12'
+    implementation 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.6.12'
+    implementation 'com.amazonaws:aws-android-sdk-s3:2.6.12'
+    testImplementation 'junit:junit:4.12'
+    implementation files('libs/login-with-amazon-sdk.jar')
 }

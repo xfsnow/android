@@ -20,12 +20,14 @@ import com.amazonaws.services.s3.model.Bucket;
 import com.example.cognitodev.model.AuthenticationRequestModel;
 import com.example.cognitodev.model.AuthenticationResponseModel;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = "cogdev_Main";
-    public static final String COGNITO_POOL_ID = "";
+    public static final String COGNITO_POOL_ID = "us-west-2:6383cf10-d3d7-4ae4-992d-24fb43fc3e4e";
     public static final Regions REGION = Regions.US_WEST_2;
 
     Context context;

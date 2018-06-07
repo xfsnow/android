@@ -29,7 +29,7 @@ dependencies {
 
     implementation project(':aws-android-sdk-core')
 
-    implementation ("com.amazonaws:aws-android-sdk-apigateway-core:2.6.20") {
+    implementation ('com.amazonaws:aws-android-sdk-apigateway-core:2.6.20') {
         exclude group:'com.amazonaws', module:'aws-android-sdk-core'
     }
     implementation ('com.amazonaws:aws-android-sdk-cognito:2.6.20') {
