@@ -8,8 +8,17 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.auth.CognitoCredentialsProvider;
+import com.amazonaws.mobileconnectors.apigateway.ApiClientFactory;
 import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.Bucket;
+import com.aws.cognitowechat.model.AuthenticationRequestModel;
+import com.aws.cognitowechat.model.AuthenticationResponseModel;
 import com.aws.cognitowechat.wxapi.WXClient;
 import com.tencent.mm.opensdk.modelmsg.SendAuth;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
@@ -20,6 +29,10 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = "WXMA";
+
+    //请把你的 Cognito Pool Id 写在这里
+    public static final String COGNITO_POOL_ID = "";
+    public static final Regions REGION = Regions.CN_NORTH_1;
 
     // IWXAPI 是第三方app和微信通信的openapi接口
     private IWXAPI api;
@@ -83,7 +96,28 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (isWXLogin) {
             Toast.makeText(this, "微信code为" + WX_CODE, Toast.LENGTH_LONG).show();
-
+            txtHint.setText("Logging...");
+            new Thread() {
+                @Override
+                public void run() {
+                    super.run();
+//                    getAuth(WX_CODE);
+//                getCredential(WX_CODE);
+                    DeveloperAuthenticationProvider developerProvider = new DeveloperAuthenticationProvider
+                            (null, COGNITO_POOL_ID, getApplicationContext(), REGION, WX_CODE);
+                    CognitoCredentialsProvider credentialsProvider = new CognitoCredentialsProvider(developerProvider, REGION);
+                    AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
+                    // BJS 区需要特别指定一下 region　参数
+                    s3.setRegion(Region.getRegion(REGION));
+                    List<Bucket> bucketList = s3.listBuckets();
+                    StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
+                    for (Bucket bucket : bucketList) {
+                        bucketNameList.append(bucket.getName()).append("\n");
+                    }
+                    setHint(txtHint, "Login succeeded.\n" + bucketNameList);
+                }
+            }.start();
         }
+
     }
 }
