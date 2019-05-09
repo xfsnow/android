@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -25,7 +26,7 @@ import cn.aws.cognitobjs.model.AuthenticationResponseModel;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String TAG = "cogdev_Main";
+    public static final String TAG = "cogdev_BJS";
     // 请在这里写你的 Cognito Pool Id
     public static final String COGNITO_POOL_ID = "cn-north-1:";
     public static final Regions REGION = Regions.CN_NORTH_1;
@@ -153,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
                 String username = "user";
                 String password = "1234";
 //                getAuth(username, password);
-                getCredential(username, password);
+//                getCredential(username, password);
 
 
 //                getCredentialForIdentity(username, password);
@@ -161,55 +162,55 @@ public class MainActivity extends AppCompatActivity {
         }.start();
 
 
-//        btnLogin = (Button) findViewById(R.id.login);
-//        btnCancel = (Button) findViewById(R.id.reset);
-//        inputUsername = (EditText) findViewById(R.id.username);
-//        inputPassword = (EditText) findViewById(R.id.password);
-//
-//        txtHint = (TextView) findViewById(R.id.hint);
-//        txtHint.setText("");
-//
-//        btnLogin.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                final String username = inputUsername.getText().toString();
-//                final String password = inputPassword.getText().toString();
-//                if (username.equals("") || password.equals("")) {
-//                    txtHint.setText("Please input username and password.");
-//                }
-//                else {
-//                    txtHint.setText("Logging...");
-//                    new Thread() {
-//                        @Override
-//                        public void run() {
-//                            super.run();
-//                            DeveloperAuthenticationProvider developerProvider = new DeveloperAuthenticationProvider(null, COGNITO_POOL_ID, context, REGION, username, password);
-//                            CognitoCredentialsProvider credentialsProvider = new CognitoCredentialsProvider(developerProvider, REGION);
-//                            String identity = credentialsProvider.getIdentityId();
-//                            if (null == identity) {
-//                                setHint(txtHint, "Login failed.");
-//                            }
-//                            else {
-//                                AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
-//                                List<Bucket> bucketList = s3.listBuckets();
-//                                StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
-//                                for (Bucket bucket : bucketList) {
-//                                    bucketNameList.append(bucket.getName()).append("\n");
-//                                }
-//                                setHint(txtHint, "Login succeeded.\n"+bucketNameList);
-//                            }
-//                        }
-//                    }.start();
-//                }
-//            }
-//        });
-//
-//        btnCancel.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                inputUsername.setText("");
-//                inputPassword.setText("");
-//            }
-//        });
+        btnLogin = (Button) findViewById(R.id.login);
+        btnCancel = (Button) findViewById(R.id.reset);
+        inputUsername = (EditText) findViewById(R.id.username);
+        inputPassword = (EditText) findViewById(R.id.password);
+
+        txtHint = (TextView) findViewById(R.id.hint);
+        txtHint.setText("");
+
+        btnLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final String username = inputUsername.getText().toString();
+                final String password = inputPassword.getText().toString();
+                if (username.equals("") || password.equals("")) {
+                    txtHint.setText("Please input username and password.");
+                }
+                else {
+                    txtHint.setText("Logging...");
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            super.run();
+                            DeveloperAuthenticationProvider developerProvider = new DeveloperAuthenticationProvider(null, COGNITO_POOL_ID, context, REGION, username, password);
+                            CognitoCredentialsProvider credentialsProvider = new CognitoCredentialsProvider(developerProvider, REGION);
+                            String identity = credentialsProvider.getIdentityId();
+                            if (null == identity) {
+                                setHint(txtHint, "Login failed.");
+                            }
+                            else {
+                                AmazonS3 s3 = new AmazonS3Client(credentialsProvider, Region.getRegion(REGION));
+                                List<Bucket> bucketList = s3.listBuckets();
+                                StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
+                                for (Bucket bucket : bucketList) {
+                                    bucketNameList.append(bucket.getName()).append("\n");
+                                }
+                                setHint(txtHint, "Login succeeded.\n"+bucketNameList);
+                            }
+                        }
+                    }.start();
+                }
+            }
+        });
+
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                inputUsername.setText("");
+                inputPassword.setText("");
+            }
+        });
     }
 }
