@@ -1,15 +1,11 @@
 package com.example.cognitouserpool;
 
 import android.content.Context;
-import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.TextView;
 
-import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
-import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
@@ -20,29 +16,45 @@ import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserSession
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationContinuation;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationDetails;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.ChallengeContinuation;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.ChooseMfaContinuation;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.MultiFactorAuthenticationContinuation;
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.NewPasswordContinuation;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GetDetailsHandler;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler;
+import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cognitoidentityprovider.model.InvalidParameterException;
 import com.amazonaws.services.cognitoidentityprovider.model.InvalidPasswordException;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "CUP";
 
-    private String userId = "Test";
-    private String password = "Password@123";
-//    private String password = "Password@12";
+    // 请在这里写你的 Cognito User Pool Id
+    public static final String USER_POOL_ID = "us-west-2_w56xyV04e";
+    public static final String USER_POOL_CLIENT_ID = "cg9bgltnr0vti1q9qk1aj7tod";
+    public static final String USER_POOL_CLIENT_SECRET = "1lt7ppfe9vq0dgt223hsr0ms1a057jppp17fch3gi9lbmuomnskj";
 
+    public static final String IDENTITY_POOL_ID = "us-west-2:eb8e2546-658e-4d16-bde8-e6d07cb3f7cb";
+    public static final Regions COGNITO_REGION = Regions.US_WEST_2;
+    public static final String BUCKET = "email-receive-2017";
+
+//    private String userId = "Test";
+//    private String password = "Password@123";
+//    private String userId = "vendor001";
+//    private String password = "vendor001";
+//    private String password = "Password@12";
+    private CognitoUser cognitoUser;
+    private User user;
+    private Context context;
     private CognitoCachingCredentialsProvider credentialsProvider;
 
     /**
@@ -86,26 +98,80 @@ public class MainActivity extends AppCompatActivity {
     };
 
     /**
+     * 把 User Pool 的 token 集成到 Identity pool，再换成 AWS 的凭据访问 S3
+     * @param idToken
+     */
+    private void getFile(final String idToken) {
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                Map<String, String> logins = new HashMap<String, String>();
+        //            logins.put(cognito-idp.<region>.amazonaws.com/<YOUR_USER_POOL_ID>, session.getIdToken().getJWTToken());
+                String idKey = "cognito-idp."+ COGNITO_REGION.getName()+".amazonaws.com/" + USER_POOL_ID;
+                Log.d(TAG, "idKey: "+idKey+", idToken: "+ idToken);
+                logins.put(idKey, idToken);
+
+                credentialsProvider = new CognitoCachingCredentialsProvider(
+                        context, // Context
+                        IDENTITY_POOL_ID,
+                        COGNITO_REGION
+                );
+                // 换用户登录时要先清理缓存，否则会由于之前缓存的结果报错 Amazon.CognitoIdentity.Model.NotAuthorizedException: Logins don't match. Please include at least one valid login for this identity or identity pool
+                credentialsProvider.clear();
+                credentialsProvider.setLogins(logins);
+                Log.d(TAG, "getIdentityId()=" + credentialsProvider.getIdentityId());
+                AmazonS3 s3Client = new AmazonS3Client(credentialsProvider, Region.getRegion(COGNITO_REGION));
+//                List<Bucket> bucketList = s3Client.listBuckets();
+//                StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
+//                for (Bucket bucket : bucketList) {
+//                    bucketNameList.append(bucket.getName()).append("\n");
+//                }
+        //        setHint(txtHint, "Login succeeded.\n"+bucketNameList);
+//                Log.d(TAG, "buckets: "+bucketNameList);
+                String s3Key = "vendor/vendor001/20181031145731.txt";
+                // vendor001 的文件，它的 identityId=us-west-2:abc3820d-bd52-4cdb-96fd-769f5d18a07e
+                s3Key = "vendor/us-west-2:abc3820d-bd52-4cdb-96fd-769f5d18a07e/output-auto-deploy.yaml";
+
+                // Test 用户的文件，它的 identityId=us-west-2:511d334f-017d-4145-ac05-d5a52be9a046
+//                s3Key = "vendor/us-west-2:511d334f-017d-4145-ac05-d5a52be9a046/22a44334a37100903b20977585d042bf";
+
+                try {
+                    GetObjectMetadataRequest requestCheck = new GetObjectMetadataRequest(BUCKET, s3Key);
+                    ObjectMetadata response = s3Client.getObjectMetadata(requestCheck);
+                    Log.d(TAG, "Etag: " + response.getETag() + ", size:" + response.getContentLength());
+                }
+                catch (Exception e) {
+                    Log.d(TAG, "s3 exception: ");
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+    }
+
+    /**
      * 登录用户，实现验证处理器。这里有实现的几个方法，其实是登录验证交互过程中的几步，至少 getAuthenticationDetails方法是必须实现的，用户ID和密码就是在这个方法里传递给后台接口的
      * onSuccess 和 onFailure 方法也必须实现，这是验证成功和失败返回的提示。
      */
-
     AuthenticationHandler authenticationHandler = new AuthenticationHandler() {
         @Override
         public void onSuccess(CognitoUserSession userSession, CognitoDevice newDevice) {
             // Authentication was successful, the "userSession" will have the current valid tokens
             // Time to do awesome stuff
 
+
+            // 获取用户详细信息。这2个请求都是后台运行的，所以不能保证先验证，后获取用户信息，有时可能出现验证未完成，不能获取用户信息的情况。要想保证顺序，可以放在 AuthenticationHandler.onSuccess()中。
+            cognitoUser.getDetailsInBackground(userDetailHandler);
+
+
             // Session is an object of the type CognitoUserSession
             String accessToken = userSession.getAccessToken().getJWTToken();
             String idToken = userSession.getIdToken().getJWTToken();
 
             Log.d(TAG, "onSuccess: "+userSession + "\naccessToken="+accessToken+",\n idToken="+idToken);
-            // TODO 怎么从 AWSConfiguration 中读出具体配置项的值？不用读出具体配置项的值，有另一个构造方法，直接用 awsConfiguration 作传入参数
-            Map<String, String> logins = new HashMap<String, String>();
-//            logins.put(cognito-idp.<region>.amazonaws.com/<YOUR_USER_POOL_ID>, session.getIdToken().getJWTToken());
-            logins.put("cognito-idp.us-west-2.amazonaws.com/us-west-2_sT7dO0BSj", idToken);
-            credentialsProvider.setLogins(logins);
+            // 用 User Pool 的 token 去访问AWS资源
+            getFile(idToken);
+
         }
 
         @Override
@@ -116,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
             // After the user authentication details are available, wrap them in an AuthenticationDetails class
             // Along with userId and password, parameters for user pools for Lambda can be passed here
             // The validation parameters "validationParameters" are passed in as a Map<String, String>
-            AuthenticationDetails authDetails = new AuthenticationDetails(userId, password, null);
+            AuthenticationDetails authDetails = new AuthenticationDetails(user.getUserId(), user.getPassword(), null);
 
             // Now allow the authentication to continue
             continuation.setAuthenticationDetails(authDetails);
@@ -165,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "userDetailHandler  onSuccess: ");
             Map<String, String> detailsAttributes= details.getAttributes().getAttributes();
             for (Map.Entry<String, String> entry : detailsAttributes.entrySet()) {
-                Log.d(TAG, "userDetailHandler detailsAttributes: "+entry.getKey()+"="+entry.getValue());
+//                Log.d(TAG, "userDetailHandler detailsAttributes: "+entry.getKey()+"="+entry.getValue());
             }
 
         }
@@ -178,6 +244,8 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         java.util.logging.Logger.getLogger("com.amazonaws").setLevel(java.util.logging.Level.FINEST);
@@ -187,54 +255,39 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // 实例化一个 CognitoUserPool 对象，表示我们的用户池
-        Context context = getApplicationContext();
-        // 把配置存在配置文件里 /src/main/res/raw/awsconfiguration.json。可以方便地在 github 排除掉，保证安全。
-        AWSConfiguration awsConfiguration = new AWSConfiguration(context);
-
-        CognitoUserPool userPool = new CognitoUserPool(context, awsConfiguration);
-        // TODO 怎么从 AWSConfiguration 中读出具体配置项的值？不用读出具体配置项的值，有另一个构造方法，直接用 awsConfiguration 作传入参数
-        credentialsProvider = new CognitoCachingCredentialsProvider(
-                context, // Context
-                awsConfiguration
-        );
+        context = getApplicationContext();
+        CognitoUserPool userPool = new CognitoUserPool(context, USER_POOL_ID, USER_POOL_CLIENT_ID, USER_POOL_CLIENT_SECRET, COGNITO_REGION);
 
         // 为应用程序注册用户
         // Create a CognitoUserAttributes object and add user attributes
         CognitoUserAttributes userAttributes = new CognitoUserAttributes();
-        String userGivenName = "test";
-        // 电话号码必须遵循以下格式规则：电话号码必须以加号 (+) 开头，后面紧跟国家/地区代码。电话号码只能包含 + 号和数字。您必须先删除电话号码中的任何其他字符，如圆括号、空格或短划线 (-)，然后才能将该值提交给服务。例如，美国境内的电话号码必须遵循以下格式：+14325551212。
-        String phoneNumber = "+8613000000000";
-        String email = "xuef@amazon.com";
+        user = new User("vendor001", "vendor001", "vendor001", "+8613522071098", "xuef@amazon.com");
+
+        // 另一个用户
+//        user = new User("vendor002", "vendor002", "vendor002", "+8613522071098", "xuef@amazon.com");
+//        user = new User("Test", "Password@123", "vendor001", "+8613522071098", "xuef@amazon.com");
 
 
         // Add the user attributes. Attributes are added as key-value pairs
         // Adding user's given name.
         // Note that the key is "given_name" which is the OIDC claim for given name
-//        userAttributes.addAttribute("given_name", userGivenName);
-//
-//        // Adding user's phone number
-//        userAttributes.addAttribute("phone_number", phoneNumber);
-//
-//        // Adding user's email address
-//        userAttributes.addAttribute("email", email);
-//        // 注册新用户
-//        userPool.signUpInBackground(userId, password, userAttributes, null, signupCallback);
+        userAttributes.addAttribute("given_name", user.getUserGivenName());
 
+        // Adding user's phone number
+        userAttributes.addAttribute("phone_number", user.getPhoneNumber());
+
+        // Adding user's email address
+        userAttributes.addAttribute("email", user.getEmail());
+
+        // 注册新用户。后台创建的用户初始状态是 Account Status	Enabled / FORCE_CHANGE_PASSWORD
+        //只能通过登录时改密码，或者验证邮箱来使状态正常。
+        //比较简单的办法是用 SDK 创建用户，然后在管理后台 CONFIRM
+//        userPool.signUpInBackground(user.getUserId(), user.getPassword(), userAttributes, null, signupCallback);
 
 
         // User 对象实例一次，后面可以反复使用。
-        final CognitoUser user = userPool.getUser(userId);
+        cognitoUser = userPool.getUser(user.getUserId());
         // 只要验证过一次，后面客户端 SDK 会缓存，要想再测试验证不过，必须清理缓存，或者把App删掉。
-        user.getSessionInBackground(authenticationHandler);
-
-        // getDetails() 方法没有在后台运行的相应方法，只有自己开个线程避开主线程发HTTP请求了。
-//        new Thread(){
-//            @Override
-//            public void run() {
-//                super.run();
-//                user.getDetails(userDetailHandler);
-//            }
-//        }.start();
-
+        cognitoUser.getSessionInBackground(authenticationHandler);
     }
 }
