@@ -3,9 +3,16 @@ package com.example.cognitouserpool;
 import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Layout;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.auth.CognitoCredentialsProvider;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoDevice;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUser;
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserAttributes;
@@ -47,15 +54,15 @@ public class MainActivity extends AppCompatActivity {
     public static final Regions COGNITO_REGION = Regions.US_WEST_2;
     public static final String BUCKET = "email-receive-2017";
 
-//    private String userId = "Test";
-//    private String password = "Password@123";
-//    private String userId = "vendor001";
-//    private String password = "vendor001";
-//    private String password = "Password@12";
     private CognitoUser cognitoUser;
     private User user;
     private Context context;
     private CognitoCachingCredentialsProvider credentialsProvider;
+
+    Button btnLogin, btnReset, btnLogout;
+    EditText inputUsername, inputPassword;
+    RelativeLayout layoutUser, layoutLoginForm;
+    TextView txtUserLogged, txtHint, txtResult;
 
     /**
      * 注册用户
@@ -112,15 +119,9 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "idKey: "+idKey+", idToken: "+ idToken);
                 logins.put(idKey, idToken);
 
-                credentialsProvider = new CognitoCachingCredentialsProvider(
-                        context, // Context
-                        IDENTITY_POOL_ID,
-                        COGNITO_REGION
-                );
                 // 换用户登录时要先清理缓存，否则会由于之前缓存的结果报错 Amazon.CognitoIdentity.Model.NotAuthorizedException: Logins don't match. Please include at least one valid login for this identity or identity pool
-                credentialsProvider.clear();
+//                credentialsProvider.clear();
                 credentialsProvider.setLogins(logins);
-                Log.d(TAG, "getIdentityId()=" + credentialsProvider.getIdentityId());
                 AmazonS3 s3Client = new AmazonS3Client(credentialsProvider, Region.getRegion(COGNITO_REGION));
 //                List<Bucket> bucketList = s3Client.listBuckets();
 //                StringBuilder bucketNameList = new StringBuilder("My S3 buckets are:\n");
@@ -131,15 +132,18 @@ public class MainActivity extends AppCompatActivity {
 //                Log.d(TAG, "buckets: "+bucketNameList);
                 String s3Key = "vendor/vendor001/20181031145731.txt";
                 // vendor001 的文件，它的 identityId=us-west-2:abc3820d-bd52-4cdb-96fd-769f5d18a07e
-                s3Key = "vendor/us-west-2:abc3820d-bd52-4cdb-96fd-769f5d18a07e/output-auto-deploy.yaml";
-
+//                s3Key = "vendor/us-west-2:abc3820d-bd52-4cdb-96fd-769f5d18a07e/output-auto-deploy.yaml";
+                s3Key = "vendor/"+credentialsProvider.getIdentityId()+"/"+user.getUserId()+".txt";
+                Log.d(TAG, "getIdentityId()=" + credentialsProvider.getIdentityId()+ ", s3key="+s3Key);
                 // Test 用户的文件，它的 identityId=us-west-2:511d334f-017d-4145-ac05-d5a52be9a046
 //                s3Key = "vendor/us-west-2:511d334f-017d-4145-ac05-d5a52be9a046/22a44334a37100903b20977585d042bf";
 
                 try {
                     GetObjectMetadataRequest requestCheck = new GetObjectMetadataRequest(BUCKET, s3Key);
                     ObjectMetadata response = s3Client.getObjectMetadata(requestCheck);
-                    Log.d(TAG, "Etag: " + response.getETag() + ", size:" + response.getContentLength());
+                    String out ="s3Key:\n " + s3Key+ " , \n Etag: " + response.getETag() + " , \n size:\n " + response.getContentLength()+" byte.";
+                    Log.d(TAG, out);
+                    setHint(txtResult, out);
                 }
                 catch (Exception e) {
                     Log.d(TAG, "s3 exception: ");
@@ -158,12 +162,14 @@ public class MainActivity extends AppCompatActivity {
         public void onSuccess(CognitoUserSession userSession, CognitoDevice newDevice) {
             // Authentication was successful, the "userSession" will have the current valid tokens
             // Time to do awesome stuff
+            // 登录成功，界面切换成登录后的显示用户信息
+            layoutLoginForm.setVisibility(View.GONE);
+            layoutUser.setVisibility(View.VISIBLE);
+            txtHint.setVisibility(View.INVISIBLE);
 
-
+            txtUserLogged.setText(user.getUserId()+" 你好！");
             // 获取用户详细信息。这2个请求都是后台运行的，所以不能保证先验证，后获取用户信息，有时可能出现验证未完成，不能获取用户信息的情况。要想保证顺序，可以放在 AuthenticationHandler.onSuccess()中。
             cognitoUser.getDetailsInBackground(userDetailHandler);
-
-
             // Session is an object of the type CognitoUserSession
             String accessToken = userSession.getAccessToken().getJWTToken();
             String idToken = userSession.getIdToken().getJWTToken();
@@ -244,7 +250,16 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+    public void setHint(final TextView txt, final String hint) {
 
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                txt.setVisibility(View.VISIBLE);
+                txt.setText(hint);
+            }
+        });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -256,38 +271,106 @@ public class MainActivity extends AppCompatActivity {
 
         // 实例化一个 CognitoUserPool 对象，表示我们的用户池
         context = getApplicationContext();
-        CognitoUserPool userPool = new CognitoUserPool(context, USER_POOL_ID, USER_POOL_CLIENT_ID, USER_POOL_CLIENT_SECRET, COGNITO_REGION);
 
-        // 为应用程序注册用户
-        // Create a CognitoUserAttributes object and add user attributes
-        CognitoUserAttributes userAttributes = new CognitoUserAttributes();
-        user = new User("vendor001", "vendor001", "vendor001", "+8613522071098", "xuef@amazon.com");
+        btnLogin = (Button) findViewById(R.id.login);
+        btnReset = (Button) findViewById(R.id.reset);
+        btnLogout= (Button) findViewById(R.id.logout);
+        inputUsername = (EditText) findViewById(R.id.username);
+        inputPassword = (EditText) findViewById(R.id.password);
+        txtUserLogged = (TextView) findViewById(R.id.userLogged);
+        txtResult = (TextView) findViewById(R.id.result);
+        txtHint = (TextView) findViewById(R.id.hint);
 
-        // 另一个用户
-//        user = new User("vendor002", "vendor002", "vendor002", "+8613522071098", "xuef@amazon.com");
+        layoutUser = (RelativeLayout)findViewById(R.id.user);
+        layoutLoginForm = (RelativeLayout)findViewById(R.id.loginform);
+
+        btnReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                inputUsername.setText("");
+                inputPassword.setText("");
+                txtResult.setText("");
+            }
+        });
+
+        credentialsProvider = new CognitoCachingCredentialsProvider(
+                context, // Context
+                IDENTITY_POOL_ID,
+                COGNITO_REGION
+        );
+        // 首次启动先清理一下缓存，避免直接登录
+        credentialsProvider.clear();
+        btnLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                txtHint.setVisibility(View.VISIBLE);
+                final String username = inputUsername.getText().toString();
+                final String password = inputPassword.getText().toString();
+                if (username.equals("") || password.equals("")) {
+                    txtHint.setText("Please input username and password.");
+                }
+                else {
+                    txtHint.setText("Logging...");
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            super.run();
+                            CognitoUserPool userPool = new CognitoUserPool(context, USER_POOL_ID, USER_POOL_CLIENT_ID, USER_POOL_CLIENT_SECRET, COGNITO_REGION);
+                            user = new User(username, password);
+                            // User 对象实例一次，后面可以反复使用。
+                            cognitoUser = userPool.getUser(user.getUserId());
+                            // 只要验证过一次，后面客户端 SDK 会缓存，要想再测试验证不过，必须清理缓存，或者把App删掉。
+                            cognitoUser.getSessionInBackground(authenticationHandler);
+
+                        }
+                    }.start();
+                }
+            }
+        });
+
+        btnLogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                txtHint.setVisibility(View.GONE);
+                credentialsProvider.clear();
+                layoutLoginForm.setVisibility(View.VISIBLE);
+                layoutUser.setVisibility(View.GONE);
+            }
+        });
+
+        // 未启用界面前，仅测试请求流程
+//        CognitoUserPool userPool = new CognitoUserPool(context, USER_POOL_ID, USER_POOL_CLIENT_ID, USER_POOL_CLIENT_SECRET, COGNITO_REGION);
+//
+//        // 为应用程序注册用户
+//        // Create a CognitoUserAttributes object and add user attributes
+//        CognitoUserAttributes userAttributes = new CognitoUserAttributes();
+////        user = new User("vendor001", "vendor001", "vendor001", "+8613522071098", "xuef@amazon.com");
+//
+//        // 另一个用户
+////        user = new User("vendor002", "vendor002", "vendor002", "+8613522071098", "xuef@amazon.com");
 //        user = new User("Test", "Password@123", "vendor001", "+8613522071098", "xuef@amazon.com");
-
-
-        // Add the user attributes. Attributes are added as key-value pairs
-        // Adding user's given name.
-        // Note that the key is "given_name" which is the OIDC claim for given name
-        userAttributes.addAttribute("given_name", user.getUserGivenName());
-
-        // Adding user's phone number
-        userAttributes.addAttribute("phone_number", user.getPhoneNumber());
-
-        // Adding user's email address
-        userAttributes.addAttribute("email", user.getEmail());
-
-        // 注册新用户。后台创建的用户初始状态是 Account Status	Enabled / FORCE_CHANGE_PASSWORD
-        //只能通过登录时改密码，或者验证邮箱来使状态正常。
-        //比较简单的办法是用 SDK 创建用户，然后在管理后台 CONFIRM
-//        userPool.signUpInBackground(user.getUserId(), user.getPassword(), userAttributes, null, signupCallback);
-
-
-        // User 对象实例一次，后面可以反复使用。
-        cognitoUser = userPool.getUser(user.getUserId());
-        // 只要验证过一次，后面客户端 SDK 会缓存，要想再测试验证不过，必须清理缓存，或者把App删掉。
-        cognitoUser.getSessionInBackground(authenticationHandler);
+//
+//
+//        // Add the user attributes. Attributes are added as key-value pairs
+//        // Adding user's given name.
+//        // Note that the key is "given_name" which is the OIDC claim for given name
+//        userAttributes.addAttribute("given_name", user.getUserGivenName());
+//
+//        // Adding user's phone number
+//        userAttributes.addAttribute("phone_number", user.getPhoneNumber());
+//
+//        // Adding user's email address
+//        userAttributes.addAttribute("email", user.getEmail());
+//
+//        // 注册新用户。后台创建的用户初始状态是 Account Status	Enabled / FORCE_CHANGE_PASSWORD
+//        //只能通过登录时改密码，或者验证邮箱来使状态正常。
+//        //比较简单的办法是用 SDK 创建用户，然后在管理后台 CONFIRM
+////        userPool.signUpInBackground(user.getUserId(), user.getPassword(), userAttributes, null, signupCallback);
+//
+//
+//        // User 对象实例一次，后面可以反复使用。
+//        cognitoUser = userPool.getUser(user.getUserId());
+//        // 只要验证过一次，后面客户端 SDK 会缓存，要想再测试验证不过，必须清理缓存，或者把App删掉。
+//        cognitoUser.getSessionInBackground(authenticationHandler);
     }
 }
