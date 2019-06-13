@@ -4,17 +4,25 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.content.Context;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
 import com.amazonaws.mobileconnectors.pinpoint.PinpointManager;
 import com.amazonaws.mobileconnectors.pinpoint.PinpointConfiguration;
 import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.mobile.client.UserStateDetails;
 import com.amazonaws.mobile.client.Callback;
+import com.amazonaws.mobileconnectors.pinpoint.analytics.AnalyticsClient;
+import com.amazonaws.mobileconnectors.pinpoint.analytics.AnalyticsEvent;
+
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
-
+    Button btnClick;
     public static PinpointManager pinpointManager;
 
     public static PinpointManager getPinpointManager(final Context applicationContext) {
@@ -43,6 +51,25 @@ public class MainActivity extends AppCompatActivity {
         return pinpointManager;
     }
 
+    /**
+     * Call this method to log a custom event to the analytics client.
+     */
+    public void logEvent(String eventSourceId) {
+        String eventTime = String.valueOf(new Date().getTime());
+        Double demoMetric= Math.random();
+        AnalyticsClient analyticsClient = pinpointManager.getAnalyticsClient();
+        final AnalyticsEvent event =
+                analyticsClient.createEvent("CustomEvent")
+                        .withAttribute("EventSource", eventSourceId)
+                        .withAttribute("EventTime", eventTime)
+                        .withMetric("DemoMetric", demoMetric);
+        Log.d(TAG, "logEvent: EventSource="+eventSourceId+", EventTime="+eventTime+", rand="+demoMetric);
+        Toast.makeText(this, "logEvent: EventSource="+eventSourceId+", EventTime="+eventTime+", rand="+demoMetric, Toast.LENGTH_SHORT).show();
+        analyticsClient.recordEvent(event);
+        // 其实是在 onDestroy() 统一提交了。我这里为了调试方便，每次点击都提交。
+//        analyticsClient.submitEvents();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +77,16 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate: ");
         final PinpointManager pinpointManager = getPinpointManager(getApplicationContext());
         pinpointManager.getSessionClient().startSession();
+
+
+        btnClick = (Button) findViewById(R.id.click);
+        btnClick.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClick: ");
+                logEvent(String.valueOf(btnClick.getId()));
+            }
+        });
     }
 
     @Override
