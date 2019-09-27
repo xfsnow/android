@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (isWXLogin) {
-            Toast.makeText(this, "微信code为" + WX_CODE, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "WeChat code is" + WX_CODE, Toast.LENGTH_LONG).show();
             txtHint.setText("Logging...");
             new Thread() {
                 @Override

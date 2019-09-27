@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">CognitoWechat</string>
-    <string name="title">Cognito集成微信</string>
-    <string name="login_button">使用微信登录</string>
+    <string name="title">Cognito Intergration with WeChat</string>
+    <string name="login_button">Login with WeChat</string>
 </resources>

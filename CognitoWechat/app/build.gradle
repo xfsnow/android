@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
         config {
-            storeFile file('C:/Users/xuef/Documents/Study/Android/android_dev/android.keystore')
+            storeFile file('C:/Users/xuef/Documents/Study/Gitee/android_dev/android.keystore')
             keyAlias 'android.keystore'
             keyPassword 'AWSAI@PEK12'
             storePassword 'AWSAI@PEK12'
@@ -38,13 +38,13 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
 
-    implementation 'com.squareup.okhttp3:okhttp:3.10.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.2.0'
     implementation 'com.tencent.mm.opensdk:wechat-sdk-android-without-mta:+'
 
-    implementation 'com.amazonaws:aws-android-sdk-core:2.9.0'
-    implementation 'com.amazonaws:aws-android-sdk-apigateway-core:2.9.0'
-    implementation 'com.amazonaws:aws-android-sdk-cognito:2.9.0'
-    implementation 'com.amazonaws:aws-android-sdk-cognitoauth:2.9.0'
-    implementation 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.9.0'
-    implementation 'com.amazonaws:aws-android-sdk-s3:2.9.0'
+    implementation 'com.amazonaws:aws-android-sdk-core:2.16.0'
+    implementation 'com.amazonaws:aws-android-sdk-apigateway-core:2.16.0'
+    implementation 'com.amazonaws:aws-android-sdk-cognito:2.16.0'
+    implementation 'com.amazonaws:aws-android-sdk-cognitoauth:2.16.0'
+    implementation 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.16.0'
+    implementation 'com.amazonaws:aws-android-sdk-s3:2.16.0'
 }
