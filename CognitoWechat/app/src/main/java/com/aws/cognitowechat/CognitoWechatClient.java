@@ -20,8 +20,8 @@ import java.util.*;
 import com.aws.cognitowechat.model.AuthenticationResponseModel;
 import com.aws.cognitowechat.model.AuthenticationRequestModel;
 
-// endpoint 换成你的 API SDK 中的 URL
-@com.amazonaws.mobileconnectors.apigateway.annotation.Service(endpoint = "https://12345678.execute-api.cn-north-1.amazonaws.com.cn/test")
+// endpoint Please change this URL with the URL in your API SDK.
+@com.amazonaws.mobileconnectors.apigateway.annotation.Service(endpoint = "https://12345678.execute-api.cn-north-1.amazonaws.com.cn/test")")
 public interface CognitoWechatClient {
 
 
@@ -31,16 +31,16 @@ public interface CognitoWechatClient {
      * @return ApiResponse
      */
     com.amazonaws.mobileconnectors.apigateway.ApiResponse execute(com.amazonaws.mobileconnectors.apigateway.ApiRequest request);
-    
+
     /**
-     * 
-     * 
-     * @param body 
+     *
+     *
+     * @param body
      * @return AuthenticationResponseModel
      */
     @com.amazonaws.mobileconnectors.apigateway.annotation.Operation(path = "/loginwechat", method = "POST")
     AuthenticationResponseModel loginwechatPost(
             AuthenticationRequestModel body);
-    
+
 }
 
