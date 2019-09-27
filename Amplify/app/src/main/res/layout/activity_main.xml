@@ -25,7 +25,9 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/title"
         android:layout_centerHorizontal="true"
-        android:text="@string/click" />
+        android:text="@string/click"
+        android:textSize="@dimen/click_font_size"
+        />
 
 
     <TextView

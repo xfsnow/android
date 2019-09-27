@@ -8,7 +8,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.CognitoUserPool;
 import com.amazonaws.mobileconnectors.pinpoint.PinpointManager;
 import com.amazonaws.mobileconnectors.pinpoint.PinpointConfiguration;
 import com.amazonaws.mobile.client.AWSMobileClient;
@@ -54,9 +53,8 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Call this method to log a custom event to the analytics client.
      */
-    public void logEvent(String eventSourceId) {
+    public void logEvent(String eventSourceId, Double demoMetric) {
         String eventTime = String.valueOf(new Date().getTime());
-        Double demoMetric= Math.random();
         AnalyticsClient analyticsClient = pinpointManager.getAnalyticsClient();
         final AnalyticsEvent event =
                 analyticsClient.createEvent("CustomEvent")
@@ -66,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "logEvent: EventSource="+eventSourceId+", EventTime="+eventTime+", rand="+demoMetric);
         Toast.makeText(this, "logEvent: EventSource="+eventSourceId+", EventTime="+eventTime+", rand="+demoMetric, Toast.LENGTH_SHORT).show();
         analyticsClient.recordEvent(event);
-        // 其实是在 onDestroy() 统一提交了。我这里为了调试方便，每次点击都提交。
-//        analyticsClient.submitEvents();
+        //调试时为了及时看到事件结果，每次记录都发送
+//        pinpointManager.getAnalyticsClient().submitEvents();
     }
 
     @Override
@@ -84,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "onClick: ");
-                logEvent(String.valueOf(btnClick.getId()));
+                logEvent(String.valueOf(btnClick.getId()), Math.random());
             }
         });
     }
@@ -92,7 +90,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         pinpointManager.getSessionClient().stopSession();
         pinpointManager.getAnalyticsClient().submitEvents();
     }
