@@ -1,2 +1,0 @@
-include ':app',':aws-android-sdk-core'
-project(':aws-android-sdk-core').projectDir = new File('app/libs/aws-android-sdk-core')

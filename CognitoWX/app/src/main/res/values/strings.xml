@@ -1,5 +1,0 @@
-<resources>
-    <string name="app_name">CognitoWX</string>
-    <string name="title">Cognito+Weixin</string>
-    <string name="login_button">使用微信登录</string>
-</resources>
